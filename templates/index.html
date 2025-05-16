@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+
+{% block title %}File Upload{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto">
+    <div class="bg-white shadow-md rounded-lg p-6 border-2 border-dashed border-gray-300">
+        <h2 class="text-2xl font-bold text-gray-800 mb-4">File Upload</h2>
+        <div class="space-y-4">
+            <div class="flex items-center justify-center">
+                <label class="w-full flex flex-col items-center px-4 py-6 bg-white rounded-lg shadow-lg tracking-wide border border-blue-500 cursor-pointer hover:bg-blue-500 hover:text-white">
+                    <span class="material-icons text-3xl">cloud_upload</span>
+                    <span class="mt-2 text-sm">Select files</span>
+                    <input type="file" id="fileInput" multiple class="hidden">
+                </label>
+            </div>
+            <button onclick="uploadFiles()" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-lg flex items-center justify-center">
+                <span class="material-icons mr-2">upload</span>
+                Upload Files
+            </button>
+            <div id="status" class="text-center text-gray-600"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+    async function uploadFiles() {
+        const fileInput = document.getElementById('fileInput');
+        const status = document.getElementById('status');
+        const files = fileInput.files;
+
+        if (files.length === 0) {
+            status.textContent = 'Please select files to upload';
+            return;
+        }
+
+        const formData = new FormData();
+        for (let i = 0; i < files.length; i++) {
+            formData.append('files[]', files[i]);
+        }
+
+        try {
+            status.textContent = 'Uploading...';
+            const response = await fetch('/upload', {
+                method: 'POST',
+                body: formData
+            });
+
+            if (response.ok) {
+                status.textContent = 'Files uploaded successfully!';
+                fileInput.value = '';
+            } else {
+                status.textContent = 'Upload failed. Please try again.';
+            }
+        } catch (error) {
+            status.textContent = 'Error uploading files: ' + error.message;
+        }
+    }
+</script>
+{% endblock %}

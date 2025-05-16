@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+
+{% block title %}OCR Processing{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto">
+    <div class="bg-white shadow-lg rounded-lg p-6">
+        <h1 class="text-2xl font-bold text-gray-800 mb-6">Processing: {{ filename }}</h1>
+        
+        <div class="space-y-6">
+            <div id="statusContainer" class="bg-blue-50 p-4 rounded-lg">
+                <div class="flex items-center">
+                    <span class="material-icons text-blue-500 mr-2">pending</span>
+                    <span class="text-blue-700">Processing Status</span>
+                </div>
+                <div id="statusMessage" class="mt-2 text-blue-600">Initializing...</div>
+                <div id="progressBar" class="mt-2 h-2 bg-gray-200 rounded">
+                    <div class="h-full bg-blue-500 rounded" style="width: 0%"></div>
+                </div>
+            </div>
+
+            <!-- Edit Button (Hidden by default) -->
+            <!-- Add this to the editButtonContainer div -->
+            <div id="editButtonContainer" class="hidden text-center mt-6">
+                <a href="/edit-text/{{ filename }}" class="inline-block bg-green-500 text-white px-6 py-3 rounded-lg hover:bg-green-600 transition-colors">
+                    {% if status.edited_pages %}
+                    <span class="material-icons align-middle mr-2">edit</span>
+                    Continue Editing (Page {{ status.edited_pages|length }})
+                    {% else %}
+                    <span class="material-icons align-middle mr-2">edit</span>
+                    Start Editing
+                    {% endif %}
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    async function checkStatus() {
+        try {
+            const response = await fetch(`/get-processing-status/ocr/{{ filename }}`);
+            const data = await response.json();
+            
+            if (response.ok) {
+                document.getElementById('statusMessage').textContent = data.message;
+                document.getElementById('progressBar').firstElementChild.style.width = `${data.progress}%`;
+                
+                // Show edit button when processing is complete
+                if (data.status === 'completed') {
+                    document.getElementById('editButtonContainer').classList.remove('hidden');
+                }
+                
+                if (data.status !== 'completed' && data.status !== 'error') {
+                    setTimeout(checkStatus, 5000); // Check again in 5 seconds
+                }
+            }
+        } catch (error) {
+            console.error('Error checking status:', error);
+        }
+    }
+
+    // Start checking status when page loads
+    checkStatus();
+</script>
+{% endblock %}

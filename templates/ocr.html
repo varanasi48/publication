@@ -1,0 +1,120 @@
+{% extends "base.html" %}
+
+{% block title %}OCR Service{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto">
+    <h1 class="text-3xl font-bold text-gray-800 mb-8 text-center">OCR Service</h1>
+    
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+        <!-- New Project Card -->
+        <a href="#" class="block" onclick="openModal(); return false;">
+            <div class="bg-white rounded-lg shadow-md p-8 hover:shadow-lg transition-shadow h-48 flex flex-col items-center justify-center">
+                <span class="material-icons text-5xl text-blue-600 mb-4">add_circle</span>
+                <h2 class="text-2xl font-bold text-gray-800 text-center">New Project</h2>
+            </div>
+        </a>
+
+        <!-- Under Processing Card -->
+        <a href="#" class="block">
+            <div class="bg-white rounded-lg shadow-md p-8 hover:shadow-lg transition-shadow h-48 flex flex-col items-center justify-center">
+                <span class="material-icons text-5xl text-blue-600 mb-4">hourglass_top</span>
+                <h2 class="text-2xl font-bold text-gray-800 text-center">Under Processing</h2>
+            </div>
+        </a>
+    </div>
+
+    <!-- Modal -->
+    <div id="projectModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden flex items-center justify-center">
+        <div class="bg-white rounded-lg p-8 max-w-md w-full">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-xl font-bold">Create New OCR Project</h3>
+                <button onclick="closeModal()" class="text-gray-500 hover:text-gray-700">
+                    <span class="material-icons">close</span>
+                </button>
+            </div>
+            <div class="mb-6">
+                <label class="block text-gray-700 text-sm font-bold mb-2" for="fileSelect">
+                    Select PDF File
+                </label>
+                <select id="fileSelect" class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-blue-500">
+                    <option value="">Select a file...</option>
+                </select>
+            </div>
+            <div class="flex justify-end">
+                <button onclick="createProject()" class="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600">
+                    Create Project
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        async function loadFiles() {
+            try {
+                const response = await fetch('/get-preprocessed-files');
+                if (!response.ok) {
+                    throw new Error('Failed to fetch files');
+                }
+                const files = await response.json();
+                console.log('Received files:', files);
+
+                const select = document.getElementById('fileSelect');
+                select.innerHTML = '<option value="">Select a file...</option>';
+                files.forEach(file => {
+                    const option = document.createElement('option');
+                    option.value = file;
+                    option.textContent = file;
+                    select.appendChild(option);
+                });
+            } catch (error) {
+                console.error('Error loading files:', error);
+                alert('Error loading files. Please try again.');
+            }
+        }
+
+        function openModal() {
+            document.getElementById('projectModal').classList.remove('hidden');
+            loadFiles();
+        }
+
+        function closeModal() {
+            document.getElementById('projectModal').classList.add('hidden');
+        }
+
+        async function createProject() {
+            const select = document.getElementById('fileSelect');
+            const filename = select.value;
+            
+            if (!filename) {
+                alert('Please select a file');
+                return;
+            }
+
+            try {
+                const response = await fetch('/create-ocr-project', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ filename })
+                });
+
+                const result = await response.json();
+                if (response.ok) {
+                    if (result.redirect) {
+                        window.location.href = result.redirect;
+                    } else {
+                        alert('Project created successfully');
+                        closeModal();
+                    }
+                } else {
+                    alert(result.error || 'Failed to create project');
+                }
+            } catch (error) {
+                alert('Error creating project');
+            }
+        }
+    </script>
+</div>
+{% endblock %}

@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Text{% endblock %}
+
+{% block content %}
+<div class="max-w-full mx-auto p-4">
+    <div class="flex justify-between items-center mb-4">
+        <h1 class="text-2xl font-bold">Editing: {{ filename }}</h1>
+        <div class="flex items-center space-x-4">
+            <button onclick="prevPage()" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
+                <span class="material-icons">arrow_back</span>
+            </button>
+            <span id="pageInfo" class="text-lg font-semibold">Page 1</span>
+            <button onclick="nextPage()" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
+                <span class="material-icons">arrow_forward</span>
+            </button>
+            <button onclick="saveText()" class="bg-green-500 text-white px-6 py-2 rounded hover:bg-green-600">
+                <span class="material-icons">save</span> Save
+            </button>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-2 gap-4">
+        <!-- Original Text -->
+        <div class="bg-gray-50 p-4 rounded-lg">
+            <h2 class="text-lg font-semibold mb-2">Original Text</h2>
+            <div id="originalText" class="whitespace-pre-wrap font-mono bg-white p-4 rounded border h-[calc(100vh-200px)] overflow-y-auto"></div>
+        </div>
+
+        <!-- Editable Text -->
+        <div class="bg-gray-50 p-4 rounded-lg">
+            <h2 class="text-lg font-semibold mb-2">Edit Text</h2>
+            <textarea id="editableText" class="w-full h-[calc(100vh-200px)] p-4 font-mono rounded border focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+        </div>
+    </div>
+</div>
+
+<script>
+    let currentPage = 1;
+    let totalPages = 0;
+
+    async function loadText(page) {
+        try {
+            const response = await fetch(`/get-page-text/{{ filename }}/${page}`);
+            const data = await response.json();
+            
+            if (response.ok) {
+                document.getElementById('originalText').textContent = data.text;
+                document.getElementById('editableText').value = data.text;
+                document.getElementById('pageInfo').textContent = `Page ${page}`;
+                currentPage = page;
+            }
+        } catch (error) {
+            console.error('Error loading text:', error);
+        }
+    }
+
+    async function saveText() {
+        try {
+            const text = document.getElementById('editableText').value;
+            const response = await fetch(`/save-page-text/{{ filename }}/${currentPage}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ text })
+            });
+
+            if (response.ok) {
+                alert('Text saved successfully');
+            } else {
+                alert('Error saving text');
+            }
+        } catch (error) {
+            console.error('Error saving text:', error);
+            alert('Error saving text');
+        }
+    }
+
+    function prevPage() {
+        if (currentPage > 1) {
+            loadText(currentPage - 1);
+        }
+    }
+
+    function nextPage() {
+        loadText(currentPage + 1);
+    }
+
+    // Load initial page
+    loadText(1);
+</script>
+{% endblock %}

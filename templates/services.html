@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+
+{% block title %}Our Services{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto">
+    <h1 class="text-3xl font-bold text-gray-800 mb-8">Publication Services</h1>
+    
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <!-- OCR Service Card -->
+        <a href="{{ url_for('ocr_service') }}" class="block">
+            <div class="bg-white rounded-lg shadow-md p-8 hover:shadow-lg transition-shadow h-48 flex flex-col items-center justify-center">
+                <span class="material-icons text-5xl text-blue-600 mb-4">document_scanner</span>
+                <h2 class="text-2xl font-bold text-gray-800 text-center">OCR Service</h2>
+            </div>
+        </a>
+
+        <!-- Fixed Layout EPUB Card -->
+        <a href="{{ url_for('fixed_layout_epub') }}" class="block">
+            <div class="bg-white rounded-lg shadow-md p-8 hover:shadow-lg transition-shadow h-48 flex flex-col items-center justify-center">
+                <span class="material-icons text-5xl text-blue-600 mb-4">auto_stories</span>
+                <h2 class="text-2xl font-bold text-gray-800 text-center">Fixed Layout EPUB</h2>
+            </div>
+        </a>
+    </div>
+</div>
+{% endblock %}
