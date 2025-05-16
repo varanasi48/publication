@@ -3,6 +3,7 @@ from flask import Flask, render_template, request, jsonify
 import os
 import json
 import fitz  # Only needed for OCR text extraction
+from flask import Flask, jsonify
 
 app = Flask(__name__)
 
@@ -237,7 +238,24 @@ def epub_processing(filename):
 
 @app.route('/ocr-service')
 def ocr_service():
-    return render_template('ocr.html')
+    try:
+        projects = []
+        if os.path.exists('ocr'):
+            for project in os.listdir('ocr'):
+                project_path = os.path.join('ocr', project)
+                if os.path.isdir(project_path):
+                    status_file = os.path.join(project_path, 'status.json')
+                    if os.path.exists(status_file):
+                        with open(status_file, 'r') as f:
+                            status = json.load(f)
+                            projects.append({
+                                'name': project,
+                                'status': status.get('status', 'unknown'),
+                                'progress': status.get('progress', 0)
+                            })
+        return render_template('ocr.html', projects=projects)
+    except Exception as e:
+        return render_template('ocr.html', projects=[])
 
 @app.route('/edit-text/<filename>')
 def edit_text(filename):
@@ -279,6 +297,28 @@ def save_page_text(filename, page_num):
             json.dump(status, f)
             
         return jsonify({'message': 'Text saved successfully'})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/get-processing-projects/epub')
+def get_processing_epub_projects():
+    try:
+        projects = []
+        epub_folder = 'epub'  # Ensure this path is correct
+        if os.path.exists(epub_folder):
+            for project in os.listdir(epub_folder):
+                project_path = os.path.join(epub_folder, project)
+                if os.path.isdir(project_path):
+                    status_file = os.path.join(project_path, 'status.json')
+                    if os.path.exists(status_file):
+                        with open(status_file, 'r') as f:
+                            status = json.load(f)
+                            projects.append({
+                                'name': project,
+                                'status': status.get('status', 'unknown'),
+                                'progress': status.get('progress', 0)
+                            })
+        return jsonify(projects)
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 

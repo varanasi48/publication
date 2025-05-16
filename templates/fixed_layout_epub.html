@@ -8,7 +8,7 @@
     
     <div class="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
         <!-- New Project Card -->
-        <a href="#" class="block" onclick="openModal(); return false;">
+        <a href="#" class="block" onclick="openNewProjectModal(); return false;">
             <div class="bg-white rounded-lg shadow-md p-8 hover:shadow-lg transition-shadow h-48 flex flex-col items-center justify-center">
                 <span class="material-icons text-5xl text-blue-600 mb-4">add_circle</span>
                 <h2 class="text-2xl font-bold text-gray-800 text-center">New Project</h2>
@@ -16,7 +16,7 @@
         </a>
 
         <!-- Under Processing Card -->
-        <a href="#" class="block">
+        <a href="#" class="block" onclick="openProcessingModal(); return false;">
             <div class="bg-white rounded-lg shadow-md p-8 hover:shadow-lg transition-shadow h-48 flex flex-col items-center justify-center">
                 <span class="material-icons text-5xl text-blue-600 mb-4">hourglass_top</span>
                 <h2 class="text-2xl font-bold text-gray-800 text-center">Under Processing</h2>
@@ -24,12 +24,12 @@
         </a>
     </div>
 
-    <!-- Modal -->
-    <div id="projectModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden flex items-center justify-center">
+    <!-- New Project Modal -->
+    <div id="newProjectModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden flex items-center justify-center">
         <div class="bg-white rounded-lg p-8 max-w-md w-full">
             <div class="flex justify-between items-center mb-6">
                 <h3 class="text-xl font-bold">Create New Project</h3>
-                <button onclick="closeModal()" class="text-gray-500 hover:text-gray-700">
+                <button onclick="closeNewProjectModal()" class="text-gray-500 hover:text-gray-700">
                     <span class="material-icons">close</span>
                 </button>
             </div>
@@ -45,6 +45,21 @@
                 <button onclick="createProject()" class="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600">
                     Create Project
                 </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Processing Modal -->
+    <div id="processingModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden flex items-center justify-center">
+        <div class="bg-white rounded-lg p-8 max-w-md w-full">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-xl font-bold">Projects Under Processing</h3>
+                <button onclick="closeProcessingModal()" class="text-gray-500 hover:text-gray-700">
+                    <span class="material-icons">close</span>
+                </button>
+            </div>
+            <div id="processingFilesList" class="max-h-96 overflow-y-auto">
+                <!-- Processing files will be inserted here -->
             </div>
         </div>
     </div>
@@ -73,14 +88,13 @@
             }
         }
 
-        // Call loadFiles when the modal opens
-        function openModal() {
-            document.getElementById('projectModal').classList.remove('hidden');
-            loadFiles();  // Make sure this is called
+        function openNewProjectModal() {
+            document.getElementById('newProjectModal').classList.remove('hidden');
+            loadFiles();
         }
 
-        function closeModal() {
-            document.getElementById('projectModal').classList.add('hidden');
+        function closeNewProjectModal() {
+            document.getElementById('newProjectModal').classList.add('hidden');
         }
 
         async function createProject() {
@@ -107,7 +121,7 @@
                         window.location.href = result.redirect;
                     } else {
                         alert('Project created successfully');
-                        closeModal();
+                        closeNewProjectModal();
                     }
                 } else {
                     alert(result.error || 'Failed to create project');
@@ -116,39 +130,54 @@
                 alert('Error creating project');
             }
         }
-        async function createProject() {
-    const select = document.getElementById('fileSelect');
-    const filename = select.value;
-    
-    if (!filename) {
-        alert('Please select a file');
-        return;
-    }
 
-    try {
-        const response = await fetch('/create-epub-project', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ filename })
-        });
-
-        const result = await response.json();
-        if (response.ok) {
-            if (result.redirect) {
-                window.location.href = result.redirect;
-            } else {
-                alert('Project created successfully');
-                closeModal();
+        async function loadProcessingFiles() {
+            try {
+                const response = await fetch('/get-processing-projects/epub');
+                if (!response.ok) {
+                    throw new Error('Failed to fetch processing projects');
+                }
+                const projects = await response.json();
+                
+                const projectsDiv = document.getElementById('processingFilesList');
+                projectsDiv.innerHTML = '';
+                
+                if (projects.length === 0) {
+                    projectsDiv.innerHTML = '<div class="p-4 text-gray-700">No projects in progress</div>';
+                    return;
+                }
+                
+                projects.forEach(project => {
+                    const projectElement = document.createElement('div');
+                    projectElement.className = 'border-b border-gray-200 p-4 hover:bg-gray-50';
+                    projectElement.innerHTML = `
+                        <a href="/epub-processing/${project.name}" class="block">
+                            <div class="flex justify-between items-center">
+                                <span class="text-lg font-medium">${project.name}</span>
+                                <span class="px-3 py-1 rounded-full text-sm ${
+                                    project.status === 'completed' ? 'bg-green-100 text-green-800' :
+                                    project.status === 'error' ? 'bg-red-100 text-red-800' :
+                                    'bg-blue-100 text-blue-800'
+                                }">${project.status}</span>
+                            </div>
+                        </a>
+                    `;
+                    projectsDiv.appendChild(projectElement);
+                });
+            } catch (error) {
+                console.error('Error loading processing files:', error);
+                alert('Error loading processing files. Please try again.');
             }
-        } else {
-            alert(result.error || 'Failed to create project');
         }
-    } catch (error) {
-        alert('Error creating project');
-    }
-}
+
+        function openProcessingModal() {
+            document.getElementById('processingModal').classList.remove('hidden');
+            loadProcessingFiles();
+        }
+
+        function closeProcessingModal() {
+            document.getElementById('processingModal').classList.add('hidden');
+        }
     </script>
 </div>
 {% endblock %}
